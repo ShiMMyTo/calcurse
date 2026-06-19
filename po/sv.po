@@ -767,13 +767,13 @@ msgid "Data files have changed and will be overwritten:"
 msgstr "Datafiler har ändrats och kommer att skrivas över:"
 
 msgid "(c)ontinue"
-msgstr "(f)ortsätt"
+msgstr "(c) fortsätt"
 
 msgid "(m)erge"
-msgstr "slå ihop (m)"
+msgstr "(m) slå ihop"
 
 msgid "c(a)ncel"
-msgstr "avbryt(a)"
+msgstr "(a)vbryt"
 
 msgid "[cma]"
 msgstr "[cma]"
@@ -1707,7 +1707,7 @@ msgid ""
 "This item is recurrent and has a note attached to it. Delete (s)elected "
 "occurrence, (a)ll occurrences, or just its (n)ote?"
 msgstr ""
-"Detta objekt är återkommande och har en anteckning bifogad. Ta bort (m)arkerat "
+"Detta objekt är återkommande och har en anteckning bifogad. Ta bort (s) markerat "
 "tillfälle, (a)lla tillfällen, eller bara dess (n)ot?"
 
 msgid "[san]"
@@ -1717,7 +1717,7 @@ msgid ""
 "This item has a note attached to it. Delete (s)elected occurrence or just "
 "its (n)ote?"
 msgstr ""
-"Detta objekt har en anteckning bifogad. Ta bort (m)arkerat tillfälle eller bara dess (n)ot?"
+"Detta objekt har en anteckning bifogad. Ta bort (s) markerat tillfälle eller bara dess (n)ot?"
 
 msgid "[sn]"
 msgstr "[sn]"
@@ -1725,13 +1725,13 @@ msgstr "[sn]"
 msgid ""
 "This item is recurrent. Delete (s)elected occurrence or (a)ll occurrences?"
 msgstr ""
-"Detta objekt är återkommande. Ta bort (m)arkerat tillfälle eller (a)lla tillfällen?"
+"Detta objekt är återkommande. Ta bort (s) markerat tillfälle eller (a)lla tillfällen?"
 
 msgid "[sa]"
 msgstr "[sa]"
 
 msgid "Confirm deletion. Delete (s)elected occurrence? Press (s) to confirm."
-msgstr "Bekräfta borttagning. Ta bort (m)arkerat tillfälle? Tryck (s) för att bekräfta."
+msgstr "Bekräfta borttagning. Ta bort (s) markerat tillfälle? Tryck (s) för att bekräfta."
 
 msgid "[s]"
 msgstr "[s]"
@@ -1740,7 +1740,7 @@ msgid "Already repeated."
 msgstr "Redan upprepad."
 
 msgid "A (s)imple or (a)dvanced repetition?"
-msgstr "En (e)nkel eller (a)vancerad upprepning?"
+msgstr "En (s) enkel eller (a)vancerad upprepning?"
 
 msgid "Enter the new TODO item:"
 msgstr "Ange den nya uppgiften:"
@@ -1752,7 +1752,7 @@ msgid "Do you really want to delete this task?"
 msgstr "Vill du verkligen ta bort denna uppgift?"
 
 msgid "This item has a note attached to it. Delete (t)odo or just its (n)ote?"
-msgstr "Detta objekt har en anteckning bifogad. Ta bort (u)ppgift eller bara dess (n)ot?"
+msgstr "Detta objekt har en anteckning bifogad. Ta bort (t) uppgift eller bara dess (n)ot?"
 
 msgid "[tn]"
 msgstr "[tn]"
