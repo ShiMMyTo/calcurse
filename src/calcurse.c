@@ -833,6 +833,25 @@ void handle_mouse_event(MEVENT *ev)
 
 	int mx = ev->x, my = ev->y;
 
+	/* Handle left-click on APP panel: select the clicked item. */
+	if (ev->bstate & BUTTON1_PRESSED && mx < sw_cal.x && mx >= 0) {
+		int off = conf.compact_panels ? 1 : 3;
+		if (my >= win[APP].y + off && my < win[APP].y + win[APP].h - 1) {
+			int line = my - win[APP].y - off + lb_apt.sw.line_off;
+			int i;
+			for (i = 0; i < (int)lb_apt.item_count; i++) {
+				if (line >= (int)lb_apt.ch[i] && line < (int)lb_apt.ch[i + 1]) {
+					wins_slctd_set(APP);
+					listbox_set_sel(&lb_apt, i);
+					if (ev->bstate & BUTTON3_PRESSED)
+						ui_day_item_edit();
+					wins_update(FLAG_APP);
+					return;
+				}
+			}
+		}
+	}
+
 	/* Check if event is within the calendar panel. */
 	if (my < sw_cal.y || my >= sw_cal.y + sw_cal.h)
 		return;
@@ -857,6 +876,15 @@ void handle_mouse_event(MEVENT *ev)
 		return;
 	}
 
+	/* Right-click anywhere: edit the item at cursor position. */
+	if (ev->bstate & BUTTON3_PRESSED) {
+		if (my >= win[APP].y && my < win[APP].y + win[APP].h)
+			wins_slctd_set(APP);
+		else if (my >= win[TOD].y && my < win[TOD].y + win[TOD].h)
+			wins_slctd_set(TOD);
+		key_edit_item();
+		return;
+	}
 	/* Handle regular click (select day or header picker). */
 	if (!(ev->bstate & BUTTON1_PRESSED))
 		return;
