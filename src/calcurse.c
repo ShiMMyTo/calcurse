@@ -973,7 +973,8 @@ void handle_mouse_event(MEVENT *ev)
 	if (click_day.mm != slctd.mm)
 		return;
 
-			ui_calendar_set_slctd_day(click_day);
+	ui_calendar_set_slctd_day(click_day);
+	wins_slctd_set(CAL);
 	day_do_storage(1);
 	wins_update(FLAG_ALL);
 }
