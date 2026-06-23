@@ -833,10 +833,11 @@ void handle_mouse_event(MEVENT *ev)
 
 	int mx = ev->x, my = ev->y;
 
-	/* Handle left-click on APP panel: select the clicked item. */
-	if (ev->bstate & BUTTON1_PRESSED && mx < sw_cal.x && mx >= 0) {
+	/* Handle left-click on APP/TOD panels: select the clicked item. */
+	if (ev->bstate & BUTTON1_PRESSED) {
 		int off = conf.compact_panels ? 1 : 3;
-		if (my >= win[APP].y + off && my < win[APP].y + win[APP].h - 1) {
+		if (mx >= win[APP].x && mx < win[APP].x + win[APP].w
+		    && my >= win[APP].y + off && my < win[APP].y + win[APP].h - 1) {
 			int line = my - win[APP].y - off + lb_apt.sw.line_off;
 			int i;
 			for (i = 0; i < (int)lb_apt.item_count; i++) {
@@ -845,7 +846,22 @@ void handle_mouse_event(MEVENT *ev)
 					listbox_set_sel(&lb_apt, i);
 					if (ev->bstate & BUTTON3_PRESSED)
 						ui_day_item_edit();
-					wins_update(FLAG_APP);
+					wins_update(FLAG_ALL);
+					return;
+				}
+			}
+		}
+		if (mx >= win[TOD].x && mx < win[TOD].x + win[TOD].w
+		    && my >= win[TOD].y + off && my < win[TOD].y + win[TOD].h - 1) {
+			int line = my - win[TOD].y - off + lb_todo.sw.line_off;
+			int i;
+			for (i = 0; i < (int)lb_todo.item_count; i++) {
+				if (line >= (int)lb_todo.ch[i] && line < (int)lb_todo.ch[i + 1]) {
+					wins_slctd_set(TOD);
+					listbox_set_sel(&lb_todo, i);
+					if (ev->bstate & BUTTON3_PRESSED)
+						ui_day_item_edit();
+					wins_update(FLAG_ALL);
 					return;
 				}
 			}
@@ -863,7 +879,7 @@ void handle_mouse_event(MEVENT *ev)
 		if (elapsed > 80) {
 			last_scroll = now;
 			ui_calendar_move(MONTH_PREV, 1);
-			wins_update(FLAG_CAL | FLAG_APP | FLAG_STA);
+			wins_update(FLAG_ALL);
 		}
 		return;
 	}
@@ -871,7 +887,7 @@ void handle_mouse_event(MEVENT *ev)
 		if (elapsed > 80) {
 			last_scroll = now;
 			ui_calendar_move(MONTH_NEXT, 1);
-			wins_update(FLAG_CAL | FLAG_APP | FLAG_STA);
+			wins_update(FLAG_ALL);
 		}
 		return;
 	}
@@ -957,9 +973,9 @@ void handle_mouse_event(MEVENT *ev)
 	if (click_day.mm != slctd.mm)
 		return;
 
-	ui_calendar_set_slctd_day(click_day);
+			ui_calendar_set_slctd_day(click_day);
 	day_do_storage(1);
-	wins_update(FLAG_CAL | FLAG_APP | FLAG_STA);
+	wins_update(FLAG_ALL);
 }
 #endif /* NCURSES_MOUSE_VERSION */
 
