@@ -833,105 +833,162 @@ void handle_mouse_event(MEVENT *ev)
 
 	int mx = ev->x, my = ev->y;
 
-	/* Check if event is within the calendar panel. */
-	if (my < sw_cal.y || my >= sw_cal.y + sw_cal.h)
-		return;
-	if (mx < sw_cal.x || mx >= sw_cal.x + sw_cal.w)
-		return;
+	/* --- CALENDAR PANEL --- */
+	if (my >= sw_cal.y && my < sw_cal.y + sw_cal.h &&
+	    mx >= sw_cal.x && mx < sw_cal.x + sw_cal.w) {
 
-	/* Handle scroll (debounce: min 80ms between scroll events). */
-	if (ev->bstate & BUTTON4_PRESSED) {
-		if (elapsed > 80) {
-			last_scroll = now;
-			ui_calendar_move(MONTH_PREV, 1);
-			wins_update(FLAG_CAL | FLAG_APP | FLAG_STA);
+		if (ev->bstate & BUTTON1_PRESSED)
+			wins_slctd_set(CAL);
+
+		/* Handle scroll (debounce: min 80ms between scroll events). */
+		if (ev->bstate & BUTTON4_PRESSED) {
+			if (elapsed > 80) {
+				last_scroll = now;
+				ui_calendar_move(MONTH_PREV, 1);
+				wins_update(FLAG_ALL);
+			}
+			return;
 		}
+		if (ev->bstate & BUTTON5_PRESSED) {
+			if (elapsed > 80) {
+				last_scroll = now;
+				ui_calendar_move(MONTH_NEXT, 1);
+				wins_update(FLAG_ALL);
+			}
+			return;
+		}
+
+		/* Handle regular click (select day or header picker). */
+		if (!(ev->bstate & BUTTON1_PRESSED))
+			return;
+
+		int inner_y, inner_x, inner_h, inner_w;
+		int pad_y, pad_x;
+		int ofs_x, weekw, dayw, monthw, w;
+		int wday_start_val = ui_calendar_get_wday_start();
+
+		inner_y = sw_cal.y + (conf.compact_panels ? 1 : 3);
+		inner_x = sw_cal.x + 1;
+		inner_h = sw_cal.h - (conf.compact_panels ? 2 : 4);
+		inner_w = sw_cal.w - 2;
+
+		pad_y = my - inner_y + sw_cal.line_off;
+		pad_x = mx - inner_x;
+
+		/* Check if click is on the month/year header. */
+		if (pad_y == 0) {
+			struct date d = *ui_calendar_get_slctd_day();
+			const char *mname = nl_langinfo(MON_1 + d.mm - 1);
+			int mlen = strlen(mname);
+			int hw = wins_sbar_width() - 2;
+			int hx = (hw - (mlen + 5)) / 2;
+			if (pad_x >= hx && pad_x < hx + mlen) {
+				month_picker();
+			} else if (pad_x >= hx + mlen + 1 && pad_x < hx + mlen + 5) {
+				year_picker();
+			}
+			return;
+		}
+
+		/* Must be in date area (after weekday headers). */
+		if (pad_y < 2)
+			return;
+
+		weekw = 3;
+		dayw = 4;
+		monthw = weekw + 7 * dayw;
+		w = wins_sbar_width() - 2;
+		ofs_x = (w - monthw) / 2 + ((w - monthw) % 2);
+
+		/* Check if within the calendar grid horizontally. */
+		if (pad_x < ofs_x + weekw || pad_x >= ofs_x + monthw)
+			return;
+
+		int col = (pad_x - ofs_x - weekw) / dayw;
+		int row = pad_y - 2;
+
+		if (col < 0 || col >= WEEKINDAYS || row < 0 || row >= 6)
+			return;
+
+		/* Calculate the date from week row and day column. */
+		struct date slctd = *ui_calendar_get_slctd_day();
+		struct tm t;
+		int numdays = days[slctd.mm - 1];
+		if (2 == slctd.mm && ISLEAP(slctd.yyyy))
+			++numdays;
+
+		t = get_first_day(wday_start_val);
+		t.tm_mday += row * WEEKINDAYS + col;
+		mktime(&t);
+
+		struct date click_day;
+		click_day.dd = t.tm_mday;
+		click_day.mm = t.tm_mon + 1;
+		click_day.yyyy = t.tm_year + 1900;
+
+		/* Ensure we're within the current month. */
+		if (click_day.mm != slctd.mm)
+			return;
+
+		ui_calendar_set_slctd_day(click_day);
+		day_do_storage(1);
+		wins_update(FLAG_ALL);
 		return;
 	}
-	if (ev->bstate & BUTTON5_PRESSED) {
-		if (elapsed > 80) {
-			last_scroll = now;
-			ui_calendar_move(MONTH_NEXT, 1);
-			wins_update(FLAG_CAL | FLAG_APP | FLAG_STA);
+
+	/* --- APPOINTMENTS PANEL --- */
+	if (ev->bstate & BUTTON1_PRESSED &&
+	    my >= win[APP].y && my < win[APP].y + (int)win[APP].h &&
+	    mx >= win[APP].x && mx < win[APP].x + (int)win[APP].w) {
+
+		int inner_off = conf.compact_panels ? 1 : 3;
+		int inner_y = my - win[APP].y;
+		if (inner_y < inner_off)
+			inner_y = inner_off;
+		int total_y = inner_y - inner_off + lb_apt.sw.line_off;
+		wins_slctd_set(APP);
+		if (total_y >= 0) {
+			int n, y_acc = 0;
+			for (n = 0; n < (int)lb_apt.item_count; n++) {
+				int h = lb_apt.fn_height(n, lb_apt.cb_data);
+				if (lb_apt.type[n] == LISTBOX_ROW_TEXT &&
+				    total_y >= y_acc && total_y < y_acc + h) {
+					listbox_set_sel(&lb_apt, n);
+					break;
+				}
+				y_acc += h;
+			}
 		}
+		wins_update(FLAG_ALL);
 		return;
 	}
 
-	/* Handle regular click (select day or header picker). */
-	if (!(ev->bstate & BUTTON1_PRESSED))
-		return;
+	/* --- TODO PANEL --- */
+	if (ev->bstate & BUTTON1_PRESSED &&
+	    my >= win[TOD].y && my < win[TOD].y + (int)win[TOD].h &&
+	    mx >= win[TOD].x && mx < win[TOD].x + (int)win[TOD].w) {
 
-	int inner_y, inner_x, inner_h, inner_w;
-	int pad_y, pad_x;
-	int ofs_x, weekw, dayw, monthw, w;
-	int wday_start_val = ui_calendar_get_wday_start();
-
-	inner_y = sw_cal.y + (conf.compact_panels ? 1 : 3);
-	inner_x = sw_cal.x + 1;
-	inner_h = sw_cal.h - (conf.compact_panels ? 2 : 4);
-	inner_w = sw_cal.w - 2;
-
-	pad_y = my - inner_y + sw_cal.line_off;
-	pad_x = mx - inner_x;
-
-	/* Check if click is on the month/year header. */
-	if (pad_y == 0) {
-		struct date d = *ui_calendar_get_slctd_day();
-		const char *mname = nl_langinfo(MON_1 + d.mm - 1);
-		int mlen = strlen(mname);
-		int hw = wins_sbar_width() - 2;
-		int hx = (hw - (mlen + 5)) / 2;
-		if (pad_x >= hx && pad_x < hx + mlen) {
-			month_picker();
-		} else if (pad_x >= hx + mlen + 1 && pad_x < hx + mlen + 5) {
-			year_picker();
+		int inner_off = conf.compact_panels ? 1 : 3;
+		int inner_y = my - win[TOD].y;
+		if (inner_y < inner_off)
+			inner_y = inner_off;
+		int total_y = inner_y - inner_off + lb_todo.sw.line_off;
+		wins_slctd_set(TOD);
+		if (total_y >= 0) {
+			int n, y_acc = 0;
+			for (n = 0; n < (int)lb_todo.item_count; n++) {
+				int h = lb_todo.fn_height(n, lb_todo.cb_data);
+				if (lb_todo.type[n] == LISTBOX_ROW_TEXT &&
+				    total_y >= y_acc && total_y < y_acc + h) {
+					listbox_set_sel(&lb_todo, n);
+					break;
+				}
+				y_acc += h;
+			}
 		}
+		wins_update(FLAG_ALL);
 		return;
 	}
-
-	/* Must be in date area (after weekday headers). */
-	if (pad_y < 2)
-		return;
-
-	weekw = 3;
-	dayw = 4;
-	monthw = weekw + 7 * dayw;
-	w = wins_sbar_width() - 2;
-	ofs_x = (w - monthw) / 2 + ((w - monthw) % 2);
-
-	/* Check if within the calendar grid horizontally. */
-	if (pad_x < ofs_x + weekw || pad_x >= ofs_x + monthw)
-		return;
-
-	int col = (pad_x - ofs_x - weekw) / dayw;
-	int row = pad_y - 2;
-
-	if (col < 0 || col >= WEEKINDAYS || row < 0 || row >= 6)
-		return;
-
-	/* Calculate the date from week row and day column. */
-	struct date slctd = *ui_calendar_get_slctd_day();
-	struct tm t;
-	int numdays = days[slctd.mm - 1];
-	if (2 == slctd.mm && ISLEAP(slctd.yyyy))
-		++numdays;
-
-	t = get_first_day(wday_start_val);
-	t.tm_mday += row * WEEKINDAYS + col;
-	mktime(&t);
-
-	struct date click_day;
-	click_day.dd = t.tm_mday;
-	click_day.mm = t.tm_mon + 1;
-	click_day.yyyy = t.tm_year + 1900;
-
-	/* Ensure we're within the current month. */
-	if (click_day.mm != slctd.mm)
-		return;
-
-	ui_calendar_set_slctd_day(click_day);
-	day_do_storage(1);
-	wins_update(FLAG_CAL | FLAG_APP | FLAG_STA);
 }
 #endif /* NCURSES_MOUSE_VERSION */
 
