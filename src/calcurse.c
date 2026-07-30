@@ -833,6 +833,17 @@ void handle_mouse_event(MEVENT *ev)
 
 	int mx = ev->x, my = ev->y;
 
+	/* Right-click: view selected item (same as 'v' or ENTER). */
+	if (ev->bstate & BUTTON3_PRESSED) {
+		if (wins_slctd() == APP && !event_dummy(ui_day_get_sel()))
+			ui_day_popup_item();
+		else if (wins_slctd() == TOD)
+			ui_todo_popup_item();
+		else if (wins_slctd() == CAL)
+			key_view_item();
+		return;
+	}
+
 	/* --- CALENDAR PANEL --- */
 	if (my >= sw_cal.y && my < sw_cal.y + sw_cal.h &&
 	    mx >= sw_cal.x && mx < sw_cal.x + sw_cal.w) {
@@ -1031,7 +1042,7 @@ int main(int argc, char **argv)
 	noecho();		/* controls echoing of typed chars */
 	curs_set(0);		/* make cursor invisible */
 #ifdef NCURSES_MOUSE_VERSION
-	mousemask(BUTTON1_PRESSED | BUTTON4_PRESSED | BUTTON5_PRESSED, NULL);
+	mousemask(BUTTON1_PRESSED | BUTTON3_PRESSED | BUTTON4_PRESSED | BUTTON5_PRESSED, NULL);
 	mouseinterval(0);
 #endif /* NCURSES_MOUSE_VERSION */
 	ui_calendar_set_current_date();
