@@ -837,9 +837,6 @@ void handle_mouse_event(MEVENT *ev)
 	if (my >= sw_cal.y && my < sw_cal.y + sw_cal.h &&
 	    mx >= sw_cal.x && mx < sw_cal.x + sw_cal.w) {
 
-		if (ev->bstate & BUTTON1_PRESSED)
-			wins_slctd_set(CAL);
-
 		/* Handle scroll (debounce: min 80ms between scroll events). */
 		if (ev->bstate & BUTTON4_PRESSED) {
 			if (elapsed > 80) {
@@ -858,9 +855,11 @@ void handle_mouse_event(MEVENT *ev)
 			return;
 		}
 
-		/* Handle regular click (select day or header picker). */
 		if (!(ev->bstate & BUTTON1_PRESSED))
 			return;
+
+		/* Always set focus when clicking calendar. */
+		wins_slctd_set(CAL);
 
 		int inner_y, inner_x, inner_h, inner_w;
 		int pad_y, pad_x;
@@ -887,12 +886,15 @@ void handle_mouse_event(MEVENT *ev)
 			} else if (pad_x >= hx + mlen + 1 && pad_x < hx + mlen + 5) {
 				year_picker();
 			}
+			wins_update(FLAG_ALL);
 			return;
 		}
 
 		/* Must be in date area (after weekday headers). */
-		if (pad_y < 2)
+		if (pad_y < 2) {
+			wins_update(FLAG_ALL);
 			return;
+		}
 
 		weekw = 3;
 		dayw = 4;
@@ -901,14 +903,18 @@ void handle_mouse_event(MEVENT *ev)
 		ofs_x = (w - monthw) / 2 + ((w - monthw) % 2);
 
 		/* Check if within the calendar grid horizontally. */
-		if (pad_x < ofs_x + weekw || pad_x >= ofs_x + monthw)
+		if (pad_x < ofs_x + weekw || pad_x >= ofs_x + monthw) {
+			wins_update(FLAG_ALL);
 			return;
+		}
 
 		int col = (pad_x - ofs_x - weekw) / dayw;
 		int row = pad_y - 2;
 
-		if (col < 0 || col >= WEEKINDAYS || row < 0 || row >= 6)
+		if (col < 0 || col >= WEEKINDAYS || row < 0 || row >= 6) {
+			wins_update(FLAG_ALL);
 			return;
+		}
 
 		/* Calculate the date from week row and day column. */
 		struct date slctd = *ui_calendar_get_slctd_day();
@@ -927,8 +933,10 @@ void handle_mouse_event(MEVENT *ev)
 		click_day.yyyy = t.tm_year + 1900;
 
 		/* Ensure we're within the current month. */
-		if (click_day.mm != slctd.mm)
+		if (click_day.mm != slctd.mm) {
+			wins_update(FLAG_ALL);
 			return;
+		}
 
 		ui_calendar_set_slctd_day(click_day);
 		day_do_storage(1);
